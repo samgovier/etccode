@@ -1,8 +1,0 @@
-{
-  "eod_prtg": {
-    "scripts": {
-      "EXE": "D:\\Applications\\PRTG Network Monitor\\Custom Sensors\\EXE\\",
-      "EXEXML": "D:\\Applications\\PRTG Network Monitor\\Custom Sensors\\EXEXML\\"
-    }
-  }
-}

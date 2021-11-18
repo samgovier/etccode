@@ -1,0 +1,43 @@
+---
+driver:
+  name: vagrant
+  provider: hyperv
+
+provisioner:
+  name: chef_zero
+  product_name: chef
+  install_strategy: always
+  always_update_cookbooks: true
+  #data_bags_path: 'D:/kitchen/databags'
+  #environments_path: 'D:/kitchen/environments'
+  client_rb:
+    chef_license: accept
+    #environment: test_environment
+
+verifier:
+  name: inspec
+
+platforms:
+- name: windows-2016
+  driver:
+    box: mwrock/Windows2016
+    customize:
+      memory: 4096
+
+suites:
+  - name: default
+    run_list:
+      - recipe[eod_prtg::default]
+    attributes:
+      chef-vault:
+        databag_fallback: true
+      dev_mode: true
+      eod_prtg:
+        dellsdk:
+          is_enabled_dellsdk: true
+        eodmonitoring:
+          is_enabled_eodmonitoring: true
+        maxdbresults:
+          is_enabled_maxdbresults: true
+        edpasxx_restart_check:
+          is_enabled: true

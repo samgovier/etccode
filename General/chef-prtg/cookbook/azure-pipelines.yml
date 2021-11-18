@@ -1,0 +1,18 @@
+# Automatically trigger on pull to master
+trigger:
+- master
+
+# Use an agent from the chef-ci pool
+pool:
+  name: chef-ci
+
+# Add the chef_build_templates repo from the Chef project as a resource so we can call build templates from it
+resources:
+  repositories:
+    - repository: chef_build_templates
+      type: git
+      name: Chef/chef_build_templates
+
+steps:
+# Run the steps in the test_cookbook.yml from the chef_build_templates repo
+- template: test_cookbook.yml@chef_build_templates
