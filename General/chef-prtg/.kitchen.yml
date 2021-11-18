@@ -1,0 +1,40 @@
+# Most options are set in kitchen_global_config.yml at D:\kitchen\ on the CI server
+# setx /M KITCHEN_GLOBAL_YAML "D:\kitchen\kitchen_global_config.yml"
+
+driver:
+  name: vagrant
+  provider: hyperv
+  customize:
+    cpus: 2
+    memory: 2048
+
+provisioner:
+  name: chef_zero
+  product_version: 15.6
+  product_name: chef
+  install_strategy: always
+  always_update_cookbooks: true
+  #data_bags_path: 'D:\chef\kitchen\databags'
+  # environments_path: 'D:/kitchen/environments'
+  client_rb:
+    chef_license: accept
+    # environment: test_environment
+
+verifier:
+  name: inspec
+
+platforms:
+- name: windows-2016
+  driver:
+    box: gusztavvargadr/windows-server
+    customize:
+      memory: 4096
+
+suites:
+  - name : default
+    provisioner:
+      policyfile: Policyfile.rb
+    attributes:
+      chef-vault:
+        databags_fallback: true
+      test_kitchen: true

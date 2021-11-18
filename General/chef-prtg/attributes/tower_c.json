@@ -1,0 +1,41 @@
+{
+  "eod_prtg": {
+    "scripts": {
+      "EXE": "D:\\ProgramData\\Paessler\\PRTG Network Monitor\\Custom Sensors\\EXE\\",
+      "EXEXML": "D:\\ProgramData\\Paessler\\PRTG Network Monitor\\Custom Sensors\\EXEXML\\",
+      "sql": "D:\\ProgramData\\Paessler\\PRTG Network Monitor\\Custom Sensors\\sql"
+    },
+    "prtg": {
+      "dellsdk": {
+        "is_enabled_dellsdk": true
+      }
+    },
+    "rubyexception": {
+      "elastic_version": "2"
+    },
+    "eodmonitoring": {
+      "is_enabled_eodmonitoring": true,
+      "eod_monitoring_folder_destination": "D:\\EODMonitoring\\",
+      "eodmonitoring_file_download_name": "EODMonitoring_C_Tools.zip",
+      "eodmonitoring_file_download_location": "EOD_PRTG/Generic/EODMonitoring_C_Tools.zip",
+      "eodmonitoring_file_checksum": "093F050298BC0AE343F8619D26E548B9E92C20842EC3BF3ACFB49571467590B5"
+    },
+    "maxdbresults": {
+      "is_enabled_maxdbresults": true,
+      "folder_destination": "D:\\ProgramData\\Paessler\\PRTG Network Monitor\\Custom Sensors\\EXEXML\\",
+      "file_download_name": "MAXDBResults_C.zip",
+      "file_download_location": "EOD_PRTG/Generic/MAXDBResults_C.zip",
+      "checksum": "8EF5FE49B852527484BA2EDEB21B70BA88738B303941BB9D4E67A758AF0AB5AE"
+    },
+    "edspaxx_restart_check": {
+      "is_enabled": true,
+      "destination_file_path": "D:\\ProgramData\\Paessler\\PRTG Network Monitor\\Custom Sensors\\EXE\\",
+      "destination_file_name": "EDPASC-RestartCheck.txt",
+      "driver": "MAXDB7.7",
+      "servernode": "10.18.0.15",
+      "vault_name": "passwords",
+      "bag_id": "EDPASXX",
+      "database_name": "EDPASC"
+    }
+  }
+}

@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+<host>
+	<revisionid>1.0</revisionid>
+	<bestpracticelist>		
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO PDORemovePeriod</caption>
+			<description>This setting controls the amount of time (in seconds) that the multipath pseudo-LUN will continue to remain in system memory, even after losing all paths to the device.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="PDORemovePeriod" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">120</acceptablevalue>
+			<requiredvalue>120</requiredvalue>
+			<severity>high</severity>
+			<localeid>1</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO PathVerifyEnabled</caption>
+			<description>This flag enables path verification by MPIO on all paths every N seconds (where N depends on the value set in PathVerificationPeriod).</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="PathVerifyEnabled" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>2</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO PathVerificationPeriod</caption>
+			<description>This setting is used to indicate the periodicity (in seconds) with which MPIO has been requested to perform path verification.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="PathVerificationPeriod" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">30</acceptablevalue>
+			<requiredvalue>30</requiredvalue>
+			<severity>high</severity>
+			<localeid>3</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO RetryCount</caption>
+			<description>This setting specifies the number of times a failed IO if the DSM determines that a failing request must be retried.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="RetryCount" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">3</acceptablevalue>
+			<requiredvalue>3</requiredvalue>
+			<severity>high</severity>
+			<localeid>4</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO RetryInterval</caption>
+			<description>This setting specifies the interval of time (in seconds) after which a failed request is retried (after the DSM has decided so, and assuming that the IO has been retried a fewer number of times than RetryCount).</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="RetryInterval" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>5</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO PathRecoveryInterval</caption>
+			<description>Represents the period after which PathRecovery is attempted. This setting is only used if it is not set to 0 and UseCustomPathRecoveryInterval is set to 1.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="PathRecoveryInterval" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">25</acceptablevalue>
+			<requiredvalue>25</requiredvalue>
+			<severity>high</severity>
+			<localeid>6</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>MPIO UseCustomPathRecoveryInterval</caption>
+			<description>If this key exists and is set to 1, it allows the use of PathRecoveryInterval.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="UseCustomPathRecoveryInterval" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>7</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>DiskTimeOutValue</caption>
+			<description>This setting controls how long Windows waits for an IO request before aborting.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\Disk\" key="TimeOutValue" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">60</acceptablevalue>
+			<requiredvalue>60</requiredvalue>
+			<severity>high</severity>
+			<localeid>8</localeid>
+		</bestpractice>		
+		<bestpractice platform="Windows" os="">
+			<caption>MaxRequestHoldTime</caption>
+			<description>Maximum time (in seconds) for which requests will be queued if connection to the target is lost and the connection is being retried.</description>
+			<sourceinfo type="MsISCSIRegistry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}" key="MaxRequestHoldTime" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">90</acceptablevalue>
+			<requiredvalue>90</requiredvalue>
+			<severity>high</severity>
+			<localeid>9</localeid>
+		</bestpractice>						
+		<bestpractice platform="Windows" os="">
+			<caption>EnableNOPOut</caption>
+			<description>If set to non-zero value, the initiator will send NOP OUT PDUs to target if there is no activity for 2 minutes.</description>
+			<sourceinfo type="MsISCSIRegistry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}" key="EnableNOPOut" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>10</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>LinkDownTime</caption>
+			<description>This value determines how long requests will be held in the device queue and retried if the connection to the target is lost. If MPIO is installed this value is used. If MPIO is not installed MaxRequestHoldTime is used instead.</description>
+			<sourceinfo type="MsISCSIRegistry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="SYSTEM\CurrentControlSet\Control\Class\{4D36E97B-E325-11CE-BFC1-08002BE10318}" key="LinkDownTime" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">35</acceptablevalue>
+			<requiredvalue>35</requiredvalue>
+			<severity>high</severity>
+			<localeid>11</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="6.0">
+			<caption>DiskPathCheckEnabled</caption>
+			<description>If the DiskPathCheckEnabled key is set to a nonzero value, the MPIO component creates a path recovery worker.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="DiskPathCheckEnabled" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>12</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="6.1">
+			<caption>DiskPathCheckEnabled</caption>
+			<description>If the DiskPathCheckEnabled key is set to a nonzero value, the MPIO component creates a path recovery worker.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="DiskPathCheckEnabled" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">1</acceptablevalue>
+			<requiredvalue>1</requiredvalue>
+			<severity>high</severity>
+			<localeid>13</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="6.2">
+			<caption>DiskPathCheckDisabled</caption>
+			<description>If the DiskPathCheckDisabled key is set to zero, the MPIO component creates a path recovery worker.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="DiskPathCheckDisabled" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">0</acceptablevalue>
+			<requiredvalue>0</requiredvalue>
+			<severity>high</severity>
+			<localeid>14</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="6.3">
+			<caption>DiskPathCheckDisabled</caption>
+			<description>If the DiskPathCheckDisabled key is set to zero, the MPIO component creates a path recovery worker.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="DiskPathCheckDisabled" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">0</acceptablevalue>
+			<requiredvalue>0</requiredvalue>
+			<severity>high</severity>
+			<localeid>15</localeid>
+		</bestpractice>
+		<bestpractice platform="Windows" os="">
+			<caption>DiskPathCheckInterval</caption>
+			<description>If the DiskPathCheckInterval key is set to 0, or if the key does not exist, the MPIO component uses a default time interval.</description>
+			<sourceinfo type="Registry" datatype="DWORD">
+				<registryentry root="HKEY_LOCAL_MACHINE" source="System\CurrentControlSet\Services\mpio\Parameters\" key="DiskPathCheckInterval" />
+			</sourceinfo>
+			<acceptablevalue datatype="integer">25</acceptablevalue>
+			<requiredvalue>25</requiredvalue>
+			<severity>high</severity>
+			<localeid>16</localeid>
+		</bestpractice>
+		<bestpractice platform="Linux" os="">
+			<caption>node.conn.timeo.noop_out_interval</caption>
+			<description>iSCSI layer will send a NOP-Out request to each target every interval value seconds.</description>
+			<sourceinfo type="Iscsifile" datatype="integer">
+				<fileentry filename="/etc/iscsi/iscsid.conf" key="node.conn[0].timeo.noop_out_interval"/>
+			</sourceinfo>
+			<acceptablevalue datatype="integer">5</acceptablevalue>
+			<requiredvalue>5</requiredvalue>
+			<setinfo type="Iscsifile" datatype="integer">
+				<fileentry filename="/etc/iscsi/iscsid.conf" key="node.conn[0].timeo.noop_out_interval = 5"/>
+			</setinfo>
+			<severity>high</severity>
+			<localeid>17</localeid>
+		</bestpractice>
+		<bestpractice platform="Linux" os="">
+			<caption>node.conn.timeo.noop_out_timeout</caption>
+			<description>This sets the iSCSI layer to timeout a NOP-Out request after timeout value seconds.</description>
+			<sourceinfo type="Iscsifile" datatype="integer">
+				<fileentry filename="/etc/iscsi/iscsid.conf" key="node.conn[0].timeo.noop_out_timeout"/>
+			</sourceinfo>
+			<acceptablevalue datatype="integer">5</acceptablevalue>
+			<requiredvalue>5</requiredvalue>
+			<setinfo type="Iscsifile" datatype="integer">
+				<fileentry filename="/etc/iscsi/iscsid.conf" key="node.conn[0].timeo.noop_out_timeout = 5"/>
+			</setinfo>
+			<severity>high</severity>
+			<localeid>18</localeid>
+		</bestpractice>
+	</bestpracticelist>
+	<requiredhotfixlist>
+		<hotfix platform="windows" os="6.0">
+			<Id>KB2406705</Id>
+			<description>Some I/O requests to a storage device fail on a fault-tolerant system that is running Windows Server 2008 when you perform a surprise removal of one path to the storage device.</description>
+		</hotfix>		
+	</requiredhotfixlist>
+	<driverblacklist>
+		<driver platform="windows" os="">
+			<name></name>
+			<version></version>
+		</driver>		
+	</driverblacklist>
+	
+</host>

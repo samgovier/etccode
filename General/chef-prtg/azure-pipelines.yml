@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - 'policies/prtg/*'
+pr:
+- master
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: chef_build_templates
+
+stages:
+  - template: chef_policy.yml@templates
+    parameters:
+      workspace_relative_path: 'policies/prtg'
+      target_tower_letters: ["C","D","G","J"]
