@@ -1,0 +1,91 @@
+# Managed by Chef
+groups:
+- name: DBM350PurgeHasntRun
+  rules:
+    - alert: HAN-DBM350PurgeHasntRunWarn_COMPRESS
+      expr: (time() - (edp_purge_activitydatetime{job="genrequesterframework", instance="monitor_purge",action="compressrecords"})) > 108000 
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has reached its first warning level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "PURGE has not reported progress in 30+ hours on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeHasntRunWarn_PURGEFILES
+      expr: (time() - (edp_purge_activitydatetime{job="genrequesterframework", instance="monitor_purge",action="purgefiles"})) > 108000 
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has reached its first warning level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "PURGE has not reported progress in 30+ hours on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeHasntRunWarn_PURGERECORDS
+      expr: (time() - (edp_purge_activitydatetime{job="genrequesterframework", instance="monitor_purge",action="purgerecords"})) > 172800
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has reached its first warning level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "PURGE has not reported progress run in 48 hours on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeVLAHasntRunWarn
+      expr: (time() - (edp_purge_startdatetime{job="genrequesterframework", instance="monitor_purge",action="purgevla",envname!="dev"})) > 864000
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has not recorded a new purge instance on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "PURGE for VLA has not had a new run in 10+ days on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_VLA_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+    
+    - alert: HAN-DBM350PurgeVLANoProgressWarn
+      expr: (time() - (edp_purge_activitydatetime{job="genrequesterframework", instance="monitor_purge",action="purgevla",envname!="dev"})) > 604800
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has reached its first warning level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "PURGE for VLA has not reported progress in 7 days on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_VLA_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeToSlowWarn
+      expr: ((edp_purge_nbrecordsprocessed{job="genrequesterframework", instance="monitor_purge"} / (time() - edp_purge_startdatetime)) < .1) and (edp_purge_enddatetime < 0) and (edp_purge_nbrecordsprocessed > 0)
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE rate is too slow {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "Purge database has almost reached its warning level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 2
+        AlertID: HAN20
+        ProviderID: "PURGE_VLA_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeToSlowError
+      expr: ((edp_purge_nbrecordsprocessed{job="genrequesterframework", instance="monitor_purge"} / (time() - edp_purge_startdatetime)) < .05) and (edp_purge_enddatetime < 0) and (edp_purge_nbrecordsprocessed > 0)
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE rate is too slow {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+        description: "Purge database has almost reached its error level on {{ $labels.envname | toUpper }} {{ $labels.action | toUpper }} {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 3
+        AlertID: HAN20
+        ProviderID: "PURGE_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
+
+    - alert: HAN-DBM350PurgeErrorRateToHigh
+      expr: ((edp_purge_nbrecordsinfailure{job="genrequesterframework", instance="monitor_purge"} / edp_purge_nbrecordsprocessed) > .1) and (edp_purge_enddatetime < 0)
+      for: 120m
+      annotations:
+        summary: "DBM350_PURGE database has reached its error level on {{ $labels.envname | toUpper }}. A high rate of failures has occured per jobs proccessed."
+        description: "PURGE database has reached its error level on {{ $labels.envname | toUpper }} for Action {{ $labels.action | toUpper }} on Table {{ $labels.transport | toUpper }}"
+      labels:
+        AlertLevel: 3
+        AlertID: HAN20
+        ProviderID: "PURGE_{{ $labels.action | toUpper }}_{{ $labels.transport | toUpper }}"
