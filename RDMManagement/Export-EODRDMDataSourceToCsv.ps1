@@ -59,7 +59,7 @@ function Import-EODRDMModule {
     [CmdletBinding()]
     param ()
     try {
-        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global
+        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global -Force
     }
 
     # FileNotFound is thrown if we can't access the direct module file
@@ -120,13 +120,15 @@ try {
 
         if(($connType) -in @("Group", "SSHShell", "RDPConfigured")) {
             $csvExportArray += New-Object -TypeName PSObject -Property @{
-                Name    = $rdmSession.Name
-                Group   = $rdmSession.Group
-                IP      = $rdmSession.Host
-                Type    = $connType
-                Creds   = Get-EODRDMSessionCredentials -RDMSession $rdmSession
-                Gateway = Get-EODRDMSessionGatewayHost -RDMSession $rdmSession
-                Icon    = $rdmSession.ImageName
+                Name        = $rdmSession.Name
+                Type        = $connType
+                Group       = $rdmSession.Group
+                IP          = $rdmSession.Host
+                Icon        = $rdmSession.ImageName
+                CredType    = Get-EODRDMSessionCredentialType -RDMSession $rdmSession
+                ServerUser  = Get-EODRDMSessionServerUser -RDMSession $rdmSession
+                Gateway     = Get-EODRDMSessionGatewayHost -RDMSession $rdmSession
+                GatewayCred = Get-EODRDMSessionGatewayCred -RDMSession $rdmSession
             }
         }
         else {
@@ -135,7 +137,7 @@ try {
     }
 
     Write-Output -InputObject "Exporting CSV file..."
-    $csvExportArray | Export-Csv -UseCulture -Path $CsvExportPath
+    $csvExportArray | Select-Object "Name","Type","Group","IP","Icon","CredType","ServerUser","Gateway","GatewayCred" | Export-Csv -UseCulture -Path $CsvExportPath
     Write-Output -InputObject "Exported."
 }
 catch [System.Management.Automation.ValidationMetadataException] {

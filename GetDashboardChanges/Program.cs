@@ -33,6 +33,13 @@ namespace GetDashboardChanges
         static string AUTH_HEADER = null;
 
         /// <summary>
+        /// SERVER_NAMES is the EOD environments as listed in the Dashboard
+        /// </summary>
+        static string[] SERVER_NAMES = {
+            "example"
+        };
+
+        /// <summary>
         /// DashboardScrape performs requests to the dashboard to get the alert information, and then formats it
         /// into a string array that prints into a table.
         /// </summary>
@@ -40,7 +47,7 @@ namespace GetDashboardChanges
         private static string[] DashboardScrape()
         {
             // scrapeData is the array that will contain the table rows and will be returned
-            string[] scrapeData = new string[24];
+            string[] scrapeData = new string[SERVER_NAMES.Length + 3];
 
             // viewStateContent is a variable to contain the data of the original request
             string viewStateContent = string.Empty;
@@ -118,10 +125,6 @@ namespace GetDashboardChanges
             // if the response doesn't fail, continue to format the data
             if (dashResponse.IsSuccessStatusCode)
             {
-                // serverNames is the environments as listed in the Dashboard
-                string[] serverNames = {
-                    };
-
                 // dashContent is the content from the request
                 string dashContent = dashResponse.Content.ReadAsStringAsync().Result;
 
@@ -131,10 +134,10 @@ namespace GetDashboardChanges
                 scrapeData[2] = string.Format("|{0,-28}|{1,-10}|{2,-10}|", "", "", "");
 
                 // scrape for each environment
-                for (int i = 0; i < serverNames.Length; i++)
+                for (int i = 0; i < SERVER_NAMES.Length; i++)
                 {
                     // find the environment name and skip to the alert info in the HTML
-                    int curEnvIndex = dashContent.IndexOf(serverNames[i]);
+                    int curEnvIndex = dashContent.IndexOf(SERVER_NAMES[i]);
                     int startStateIndex = dashContent.IndexOf('(', curEnvIndex + 1);
 
                     // hack to skip (SG) for Singapore Azure
@@ -163,7 +166,7 @@ namespace GetDashboardChanges
                     }
 
                     // add the row for this environment to the scrape array
-                    scrapeData[i + 3] = string.Format("|{0,-28}|{1,-10}|{2,-10}|", serverNames[i], alertNumber, "NA");
+                    scrapeData[i + 3] = string.Format("|{0,-28}|{1,-10}|{2,-10}|", SERVER_NAMES[i], alertNumber, "NA");
                 }
 
                 // if there is a previous scrape written, read the file to determine the diff in alerts
@@ -177,7 +180,7 @@ namespace GetDashboardChanges
                         sr.ReadLine();
 
                         // for each server, determine the diff in alerts from this time to last time and replace NA with that
-                        for (int i = 0; i < serverNames.Length; i++)
+                        for (int i = 0; i < SERVER_NAMES.Length; i++)
                         {
                             string prevScrapeLine = sr.ReadLine();
                             // if the file is screwed up, skip: otherwise replace with diff

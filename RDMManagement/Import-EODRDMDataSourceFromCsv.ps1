@@ -60,7 +60,7 @@ function Import-EODRDMModule {
     [CmdletBinding()]
     param ()
     try {
-        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global
+        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global -Force
     }
 
     # FileNotFound is thrown if we can't access the direct module file
@@ -142,7 +142,16 @@ try {
             else {
                 try {
                     Write-Verbose -Message "Creating: $($group.Group)"
-                    Add-EODRDMSession -Name $group.Name -Type $group.Type -Group $group.Group -IP $group.IP -CredType $group.Creds -Icon $group.Icon -Gateway "" -WarningAction Stop
+                    $addEODRDMSessionParams = @{
+                        Name            = $group.Name
+                        Type            = $group.Type
+                        Group           = $group.Group
+                        Icon            = $group.Icon
+                        CredType        = $group.CredType
+                        ServerUser      = $session.ServerUser
+                        WarningAction   = "Stop"
+                    }
+                    Add-EODRDMSession @addEODRDMSessionParams
                 }
                 catch [System.Management.Automation.ActionPreferenceStopException] {
                     Write-Warning ("Unable to save session, Access is Denied. " +
@@ -171,7 +180,19 @@ try {
         }
 
         Write-Verbose -Message "Creating: $($session.Group)\$($session.Name)"
-        Add-EODRDMSession -Name $session.Name -Type $session.Type -Group $session.Group -IP $session.IP -CredType $session.Creds -Icon $session.Icon -Gateway $session.Gateway
+        $addEODRDMSessionParams = @{
+            Name            = $session.Name
+            Type            = $session.Type
+            Group           = $session.Group
+            IP              = $session.IP
+            Icon            = $session.Icon
+            CredType        = $session.CredType
+            ServerUser      = $session.ServerUser
+            Gateway         = $session.Gateway
+            GatewayCred     = $session.GatewayCred
+            WarningAction   = "Stop"
+        }
+        Add-EODRDMSession @addEODRDMSessionParams
     }
 }
 catch [System.Management.Automation.ValidationMetadataException] {

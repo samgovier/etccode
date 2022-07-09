@@ -50,7 +50,7 @@ function Import-EODRDMModule {
     [CmdletBinding()]
     param ()
     try {
-        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global
+        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global -Force
     }
 
     # FileNotFound is thrown if we can't access the direct module file

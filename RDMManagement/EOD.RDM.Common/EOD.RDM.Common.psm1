@@ -69,6 +69,58 @@ function Get-EODRDMSession {
 
 <#
 .SYNOPSIS
+    This function gets all child RDM session objects under a group (folder) object.
+#>
+function Get-EODRDMChildSessions {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FullGroupPath
+    )
+
+    # pull session objects in the immediate directory
+    $surfaceSesh = [Object[]](Get-EODRDMSession | Where-Object -FilterScript { (-not $PSItem.ConnectionType.ToString().Equals("Group")) -and ($PSItem.Group.Equals($FullGroupPath.Trim('\'))) })
+    # recurse to pull all further items
+    $recurse = [Object[]](Get-EODRDMSession | Where-Object -FilterScript { $PSItem.Group.Contains($FullGroupPath) })
+
+    # return a combo of both items
+    return ($surfaceSesh + $recurse)
+}
+
+<#
+.SYNOPSIS
+    This function gets the specific group (folder) object using the name and containing group.
+#>
+function Get-EODRDMSingleGroupObj {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FullGroupPath
+    )
+    return (Get-EODRDMSession -Name $FullGroupPath.TrimEnd('\').Split('\')[-1] | Where-Object -Property Group -eq $FullGroupPath.TrimEnd('\'))
+}
+
+<#
+.SYNOPSIS
+    This function takes a session object that exists in memory and sets it in the RDM database, writing changes.
+#>
+function Set-EODRDMSession {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $Session
+    )
+
+    Set-RDMSession -Session $Session
+}
+
+<#
+.SYNOPSIS
     This function creates, modifies and commits a new RDM session object to the database.
     Besides the provided configuration information in the parameters, it uses default settings from Set-EODRDMDefaultSettings.
 #>
@@ -88,30 +140,157 @@ function Add-EODRDMSession {
         [string]
         $CredType,
         [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
         [string]
         $Icon,
         [Parameter(Mandatory=$false)]
         [string]
         $IP,
         [Parameter(Mandatory=$false)]
+        [AllowEmptyString()]
         [string]
-        $Gateway
+        $Gateway,
+        [Parameter(Mandatory=$false)]
+        [string]
+        [AllowEmptyString()]
+        $GatewayCred,
+        [Parameter(Mandatory=$false)]
+        [string]
+        $ServerUser
     )
 
     Write-Verbose -Message "Creating: $Name, Under: $Group"
     $newSession = New-RDMSession -Name $Name -Type $Type -Group $Group -Host $IP
-
-    Write-Verbose -Message "Setting Credential Type"
-    Set-RDMSessionCredentials -PSConnection $newSession -CredentialsType $CredType
 
     Write-Verbose -Message "Setting Icon"
     $newSession.ImageName = $Icon
 
     Write-Verbose -Message "Configuring default settings for session object"
     Set-EODRDMDefaultSettings -RDMSession $newSession -Gateway $Gateway
-    
+
+    Write-Verbose -Message "Setting Credential Type"
+    Set-RDMSessionCredentials -PSConnection $newSession -CredentialsType $CredType
+
+    Write-Verbose -Message "Setting User if present"
+    Set-EODRDMSessionServerUser -RDMSession $newSession -ServerUser $ServerUser
+
+    if(-not [string]::IsNullOrWhiteSpace($Gateway)) {
+        Write-Verbose -Message "Setting Gateway Host if present"
+        Set-EODRDMSessionGatewayHost -RDMSession $newSession -Gateway $Gateway
+
+        Write-Verbose -Message "Setting Gateway Credential if present"
+        Set-EODRDMSessionGatewayCred -RDMSession $newSession -GatewayCred $GatewayCred
+    }
+
     Write-Verbose -Message "Committing new object to database"
-    Set-RDMSession -Session $newSession
+    Set-EODRDMSession -Session $newSession
+}
+
+<#
+.SYNOPSIS
+    This function pulls the server user information based on the host type and cred type.
+#>
+function Get-EODRDMSessionServerUser {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $RDMSession
+    )
+
+    switch (Get-EODRDMSessionCredentialType -RDMSession $RDMSession) {
+        "PrivateVaultSearch" {
+            return ($RDMSession.CredentialPrivateVaultSearchString)
+        }
+        "SessionSpecific" {
+            if ($RDMSession.ConnectionType -eq "SSHShell") {
+                return ($RDMSession.Terminal.Username)
+            }
+            if ($RDMSession.ConnectionType -eq "RDPConfigured") {
+                return ($RDMSession.RDP.UserName)
+            }
+        }
+    }
+
+    return ""
+}
+
+<#
+.SYNOPSIS
+    Given a session object and server user, sets the appropriate property based on the host type and cred type.
+#>
+function Set-EODRDMSessionServerUser {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $RDMSession,
+
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
+        $ServerUser
+    )
+
+    switch (Get-EODRDMSessionCredentialType -RDMSession $RDMSession) {
+        "PrivateVaultSearch" {
+            $RDMSession.CredentialPrivateVaultSearchString = $ServerUser
+        }
+        "SessionSpecific" {
+            if ($RDMSession.ConnectionType -eq "SSHShell") {
+                $RDMSession.Terminal.Username = $ServerUser
+            }
+            elseif ($RDMSession.ConnectionType -eq "RDPConfigured") {
+                $RDMSession.RDP.UserName = $ServerUser
+            }    
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    This function pulls the gateway credential information based on the host type: SSH or RDP.
+#>
+function Get-EODRDMSessionGatewayCred {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $RDMSession
+    )
+
+    if ($RDMSession.ConnectionType -eq "SSHShell") {
+        return ($RDMSession.Terminal.SSHGateways[0].PrivateVaultString)
+    }
+    if ($RDMSession.ConnectionType -eq "RDPConfigured") {
+        return ($RDMSession.RDP.GatewayPrivateVaultSearchString)
+    }
+    
+    return ""
+
+}
+
+<#
+.SYNOPSIS
+    Given a session object and gateway credential, sets the appropriate property based on the host type: SSH or RDP.
+#>
+function Set-EODRDMSessionGatewayCred {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $RDMSession,
+
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
+        $GatewayCred
+    )
+
+    if ($RDMSession.ConnectionType -eq "SSHShell") {
+        $RDMSession.Terminal.SSHGateways[0].PrivateVaultString = $GatewayCred
+    }
+    elseif ($RDMSession.ConnectionType -eq "RDPConfigured") {
+        $RDMSession.RDP.GatewayPrivateVaultSearchString = $GatewayCred
+    }    
 }
 
 <#
@@ -127,10 +306,10 @@ function Get-EODRDMSessionGatewayHost {
     )
 
     if ($RDMSession.ConnectionType -eq "SSHShell") {
-        return ($rdmSession.Terminal.SSHGateways[0].Host)
+        return ($RDMSession.Terminal.SSHGateways[0].Host)
     }
     if ($RDMSession.ConnectionType -eq "RDPConfigured") {
-        return ($rdmSession.RDP.GatewayHostname)
+        return ($RDMSession.RDP.GatewayHostname)
     }
     
     return ""
@@ -138,9 +317,33 @@ function Get-EODRDMSessionGatewayHost {
 
 <#
 .SYNOPSIS
+    Given a session object and gateway host, sets the appropriate property based on the host type: SSH or RDP.
+#>
+function Set-EODRDMSessionGatewayHost {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $RDMSession,
+
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
+        $Gateway
+    )
+
+    if ($RDMSession.ConnectionType -eq "SSHShell") {
+        $RDMSession.Terminal.SSHGateways[0].Host = $Gateway
+    }
+    elseif ($RDMSession.ConnectionType -eq "RDPConfigured") {
+        $RDMSession.RDP.GatewayHostname = $Gateway
+    }    
+}
+
+<#
+.SYNOPSIS
     This function returns the credential settings of the passed RDM session object.
 #>
-function Get-EODRDMSessionCredentials {
+function Get-EODRDMSessionCredentialType {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
@@ -199,41 +402,38 @@ function Set-EODRDMDefaultSettings {
         $RDMSession,
 
         [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
+        [string]
         $Gateway
     )
 
     switch ($RDMSession.ConnectionType)
     {
         "SSHShell" {
-            Write-Verbose -Message "Setting SSH Gateway config"
-            $RDMSession.Terminal.SSHGateways = New-Object -TypeName Devolutions.RemoteDesktopManager.Business.SSHGateway
-            $RDMSession.Terminal.SSHGateways[0].Host = $Gateway
-            $RDMSession.Terminal.SSHGateways[0].CredentialSource = "PrivateVaultSearch"
-            $RDMSession.Terminal.SSHGateways[0].PrivateVaultString = ""
-            $RDMSession.Terminal.AlwaysAcceptFingerprint = $true
-            $RDMSession.Terminal.UseSSHGateway = $true
+            if(-not [string]::IsNullOrWhiteSpace($Gateway)) {
+                Write-Verbose -Message "Setting Base SSH Gateway config"
+                $RDMSession.Terminal.SSHGateways = New-Object -TypeName Devolutions.RemoteDesktopManager.Business.SSHGateway
+                $RDMSession.Terminal.SSHGateways[0].CredentialSource = "PrivateVaultSearch"
+                $RDMSession.Terminal.AlwaysAcceptFingerprint = $true
+                $RDMSession.Terminal.UseSSHGateway = $true
+            }
 
             Write-Verbose -Message "Setting SSH UI config"
             $RDMSession.Terminal.FontMode = "Override"
-
-            if (($RDMSession.Name.ToUpper().Contains("-RHEL-") -and (-not $RDMSession.Name.ToUpper().Contains(""))) -or $RDMSession.Name.ToUpper().Contains("-OPSDB")) {
-                Write-Verbose -Message "Setting IPA config"
-                Set-RDMSessionCredentials -PSConnection $RDMSession -CredentialsType "PrivateVaultSearch"
-                $RDMSession.CredentialPrivateVaultSearchString = "IPA"
-            }
         }
         "RDPConfigured" {
-            Write-Verbose -Message "Setting RDP Gateway config"
-            $RDMSession.RDP.ConnectionType = "LowSpeedBroadband"
-            $RDMSession.RDP.GatewayProfileUsageMethod = "Explicit"
-            $RDMSession.RDP.GatewaySelection = "SpecificGateway"
-            $RDMSession.RDP.GatewayHostname = $Gateway
-            # This sets RDP Gateway Credentials to use the User Vault
-            $RDMSession.RDP.GatewayCredentialConnectionID = "88E4BE76-4C5B-4694-AA9C-D53B7E0FE0DC"
-            $RDMSession.RDP.GatewayPrivateVaultSearchString = ""
-            $RDMSession.RDP.GatewayUsageMethod = "ModeDirect"
-            $RDMSession.RDP.GatewayCredentialsSource = "UserPassword"
-            $RDMSession.RDP.PingForGateway = $true
+            if(-not [string]::IsNullOrWhiteSpace($Gateway)) {
+                Write-Verbose -Message "Setting Base RDP Gateway config"
+                $RDMSession.RDP.ConnectionType = "LowSpeedBroadband"
+                $RDMSession.RDP.GatewayProfileUsageMethod = "Explicit"
+                $RDMSession.RDP.GatewaySelection = "SpecificGateway"
+                # This sets RDP Gateway Credentials to use the User Vault
+                $RDMSession.RDP.GatewayCredentialConnectionID = "88E4BE76-4C5B-4694-AA9C-D53B7E0FE0DC"
+                $RDMSession.RDP.GatewayUsageMethod = "ModeDirect"
+                $RDMSession.RDP.GatewayCredentialsSource = "UserPassword"
+                $RDMSession.RDP.PingForGateway = $true
+            }
+
 
             Write-Verbose -Message "Setting RDP UI config"
             $RDMSession.DisableFullWindowDrag = $true

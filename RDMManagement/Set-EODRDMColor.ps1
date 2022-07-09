@@ -1,45 +1,25 @@
 <#
 .SYNOPSIS
-    This script modifies RDM objects using a provided property name and value.
+    TODO
 
     For this script to work properly, assure you have RDM version 2021.2 or newer installed.
     You also need to install the RDM PowerShell module before running the script.
     Install via an elevated PowerShell prompt: `Install-Module RemoteDesktopManager`
-    
+
 .PARAMETER DataSourceName
     DataSourceName is the name of the datasource in Remote Desktop Manager to interface with.
-
-.PARAMETER PropertyName
-    PropertyName is the Name of the property to be modified.
-    Please dot into values of sub-objects to be modified, eg. RDP.GatewaySelection
-
-.PARAMETER PropertyValue
-    PropertyValue is the value that you want to set the property to be.
-    It will take any passed type: make sure it matches the required type by RDM.
-
-.PARAMETER TypeToModify
-    TypeToModify is an optional filter on the RDM object type.
-    It must be from the following set. An empty string covers all objects.
-    folder -> "Group", Linux -> "SSHShell", Windows -> "RDPConfigured"
-
-.PARAMETER GroupToModify
-    GroupToModify is an optional filter on what folder you want to make changes to.
-    RDM uses a Windows-like folder structure with backslashes, eg. prd\tower_c\as\web.
 
 .PARAMETER PathToRDMCommon
     PathToRDMCommon is the path to the EOD.RDM.Common manifest in the RDM Powershell Pack.
     The default is the EOD.RDM.Common subfolder, which should be under this script.
 
 .EXAMPLE
-    .\Set-EODRDMProperty.ps1 -DataSourceName adminuser -PropertyName RDP.GatewaySelection -PropertyValue "SpecificGateway" -TypeToModify "RDPConfigured"
-
-.EXAMPLE
-    .\Set-EODRDMProperty.ps1 -DataSourceName ADMIN_mdsn-sqldb-bk -PropertyName Name -PropertyValue "OLD_DONOTUSE" -GroupToModify "prd\common_colt\kafka"
+    ./EODRDMTemplate.ps1
 
 .NOTES
-    File Name       : Set-EODRDMProperty.ps1
-    Author          : Sam Govier
-    Creation Date   : 11/09/21
+    File Name       : 
+    Author          : 
+    Creation Date   : 
 #>
 
 #region Config
@@ -51,30 +31,39 @@ param (
     [string]
     $DataSourceName,
 
-    # PropertyName is the Name of the property to change on relevant objects
+    # FolderPath is the path to the objects whose color needs to be set
     [Parameter(Mandatory=$true)]
     [string]
-    $PropertyName,
+    $FolderPath,
 
-    # PropertyValue is the Value that you want to set the property to be
-    [Parameter(Mandatory=$true)]
-    $PropertyValue,
-
-    # TypeToModify is the type of object you want to modify. An empty string modifies all objects
-    [Parameter(Mandatory=$false)]
-    [ValidateSet("Group","RDPConfigured","SSHShell","")]
-    $TypeToModify = "",
-
-    # GroupToModify is the group that you would like to modify
+    # ColorToSet is the color to set on the object and its child items
     [Parameter(Mandatory=$false)]
     [string]
-    $GroupToModify = "",
+    $ColorToSet,
 
     # PathToRDMCommon is the path to the RDM Powershell Module
     [Parameter(Mandatory=$false)]
     [string]
     $PathToRDMCommon = "$PSScriptRoot\EOD.RDM.Common\EOD.RDM.Common.psd1"
 )
+
+# Clean FolderPath to make it useful for querying for objects
+$queryPath = $FolderPath.Replace('/','\').TrimStart('\').ToLower()
+if (-not $queryPath.EndsWith('\')) {
+    $queryPath = $queryPath + '\'
+}
+
+# Set Color to Title Case to match RDM casing
+$ColorToSet = (Get-Culture).TextInfo.ToTitleCase($ColorToSet)
+
+# Possible Colors allowed- check and fail if not in this collection
+$COLORS      = @{"Black" = "[Black]"; "Red" = "[Red]"; "Blue" = "[Blue]";
+"Orange" = "[Orange]"; "Yellow" = "[Yellow]" ; "Purple" = "[Purple]"; "Green" = "[Green]"; "Forest" = "[Forest]"}
+
+if ((-not [string]::IsNullOrWhiteSpace($ColorToSet)) -and ($COLORS.keys -notcontains $ColorToSet)) {
+    Write-Error -Message "The color '$ColorToSet' is not allowed in the EOD RDM Database. Please use an allowed color: $($COLORS.keys -join ", ")"
+    return
+}
 
 #endregion Config
 
@@ -124,39 +113,31 @@ try {
         Get-EODRDMDataSource -Name $DataSourceName | Set-EODRDMCurrentDataSource
     }
 
-    # GroupsToModify needs to escape the back-slashes
-    $GroupToModify = $GroupToModify.Replace("\","\\")
+    # folderObject is the RDM object representing the folder that's being changed
+    $folderObject = Get-EODRDMSingleGroupObj -FullGroupPath $queryPath
 
-    # serversToModify pulls all RDM sessions, filtering on group and connection type
-    $serversToModify = (Get-EODRDMSession | Where-Object -Property Group -match $GroupToModify | Where-Object -Property ConnectionType -match $TypeToModify)
+    # childObjects is all objects under the chosen folder
+    $childObjects = Get-EODRDMChildSessions -FullGroupPath $queryPath
 
-    # progress Numerator and Denominator are used to provide progress info to the CLI
-    $progressNumerator = 0
-    $progressDenominator = $serversToModify.Count
-
-    # modify the changing property to the new value on each server
-    foreach($server in $serversToModify) {
-
-        Write-Progress -Activity "Modifying RDM Objects..." -PercentComplete ($progressNumerator++ / $progressDenominator * 100)
-        Write-Verbose "Modifying: $($server.Name)"
-
-        # do some looping to get to the modifying property: propArr splits the property into an array
-        $propArr = $PropertyName.Split('.')
-
-        # setObj is gradually set to the modifying property, starts with the server object
-        $setObj = $server
-
-        # for each property in the prop array, move setObj to the next property in the tree
-        for ($i = 0; $i -lt ($propArr.Count - 1); $i++) {
-            $setObj = $setObj.$($propArr[$i])
-        }
-
-        # set the final property to the property value
-        $setObj.$($propArr[-1]) = $PropertyValue
-
-        # update the session object
-        Set-EODRDMSession -Session $server
+    # if there is no explicit color set, pull the color from the parent folder
+    if([string]::IsNullOrWhitespace($ColorToSet)) {
+        $parentFolderObj = Get-EODRDMSingleGroupObj -FullGroupPath ($queryPath.Substring(0,$queryPath.TrimEnd('\').LastIndexOf('\')))
+        $ColorToSet = Get-EODRDMSessionColor -RDMSession $parentFolderObj
     }
+
+    # set the color on the folder itself
+    Set-EODRDMSessionColor -RDMSession $folderObject -Color $ColorToSet
+    Set-EODRDMSession -Session $folderObject
+
+    # set the color on all child objects
+    foreach($childObj in $childObjects) {
+        if ($null -ne $childObj) {
+            Set-EODRDMSessionColor -RDMSession $childObj -Color $ColorToSet
+            Set-EODRDMSession -Session $childObj
+        }
+    }
+
+
 }
 catch [System.Management.Automation.ValidationMetadataException] {
     Write-Warning -Message ("The DataSource '$DataSourceName' could not be found. " +
@@ -166,11 +147,11 @@ catch [System.Management.Automation.ValidationMetadataException] {
 catch {
     throw $PSItem
 }
-finally {   
+finally {
     # update RDM UI
     Write-Output -InputObject "Updating RDM Application to reflect changes"
     Update-EODRDMUI
-    
+
     # swap back to the original data source if necessary
     if(-not ($ogDataSource.Name -eq $DataSourceName)) {
         Write-Output -InputObject "Restoring original datasource: $($ogDataSource.Name)"

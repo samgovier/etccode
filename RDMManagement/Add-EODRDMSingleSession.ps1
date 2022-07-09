@@ -87,6 +87,16 @@ param (
     [string]
     $Gateway = "",
 
+    # GatewayCredential
+    [Parameter(Mandatory=$false)]
+    [string]
+    $GatewayCredential = "",
+
+    # ServerUser
+    [Parameter(Mandatory=$false)]
+    [string]
+    $ServerUser = "",
+
     # PathToRDMCommon is the path to the RDM Powershell Module
     [Parameter(Mandatory=$false)]
     [string]
@@ -106,7 +116,7 @@ function Import-EODRDMModule {
     [CmdletBinding()]
     param ()
     try {
-        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global
+        Import-Module -Name $PathToRDMCommon -ErrorAction Stop -Global -Force
     }
 
     # FileNotFound is thrown if we can't access the direct module file
@@ -141,25 +151,27 @@ try {
         Get-EODRDMDataSource -Name $DataSourceName | Set-EODRDMCurrentDataSource
     }
 
-    if($Type -ne "Group") {
-        if([string]::IsNullOrWhiteSpace($IP)) {
-
-            Write-Error ("No IP specified. " +
-            "An IP address is required for machine additions.")
-
-            return
-        }
-        if([string]::IsNullOrWhiteSpace($Gateway)) {
-
-            $Gateway = Get-EODRDMDefaultGateway -Type $Type
-
-            Write-Warning "No Gateway specified. Using default: $Gateway"
-        }
+    if(($Type -ne "Group") -and ([string]::IsNullOrWhiteSpace($IP))) {
+        Write-Error ("No IP specified. " +
+        "An IP address is required for machine additions.")
+        return
     }
 
     try {
         Write-Output -InputObject "Creating: $Group\$SessionName"
-        Add-EODRDMSession -Name $SessionName -Type $Type -Group $Group -IP $IP -CredType "Inherited" -Icon $Icon -Gateway $Gateway -WarningAction Stop
+        $addEODRDMSessionParams = @{
+            Name            = $SessionName
+            Type            = $Type
+            Group           = $Group
+            IP              = $IP
+            Icon            = $Icon
+            CredType        = "Inherited"
+            ServerUser      = $ServerUser
+            Gateway         = $Gateway
+            GatewayCred     = $GatewayCredential
+            WarningAction   = Stop
+        }
+        Add-EODRDMSession @addEODRDMSessionParams
     }
     catch [System.Management.Automation.ActionPreferenceStopException] {
         Write-Warning ("Unable to save session, Access is Denied. " +
