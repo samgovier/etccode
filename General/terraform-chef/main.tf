@@ -14,7 +14,7 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "ProdFC-Shared"
-    storage_account_name = "eskerfcsterraform"
+    storage_account_name = "examplefcsterraform"
     container_name       = "fc-s"
     key                  = "prodfc-s-chef.tfstate"
   }

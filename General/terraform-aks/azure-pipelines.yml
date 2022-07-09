@@ -1,0 +1,39 @@
+---
+
+schedules:
+  - cron: "0 0 * * 1-5"
+    displayName: Daily build
+    always: true
+    branches:
+      include:
+        - main
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'aks-service/*'
+pr:
+  - main
+
+variables:
+  - group: Common
+  - group: Common-shared
+
+pool:
+  name: $(AZURE_DEVOPS_POOL_NAME)
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: common-ci
+
+stages:
+  - template: terraform-workspace-pipeline.yml@templates
+    parameters:
+      workspace_relative_path: 'aks-service'
+      terraform_version: '$(TERRAFORM_VERSION)'
+      azure_devops_environment: $(AZURE_DEVOPS_ENVIRONMENT)
