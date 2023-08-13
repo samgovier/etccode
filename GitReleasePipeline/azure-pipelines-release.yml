@@ -1,0 +1,107 @@
+# manual pipeline for merging across branches
+trigger: none
+
+parameters:
+  # releaseVersion is the version that is being released to Early Access
+  - name: releaseVersion
+    displayName: Release Version
+    type: string
+    default: "xx.x"
+  # nextVersion is the version that will be released next; usually just an increment of the minor version.
+  - name: nextVersion
+    displayName: Next Version
+    type: string
+    default: "xx.x"
+
+variables:
+  # development-branch is the branch that contains the dev work to be released to early access
+  development-branch: main
+  # early-access-branch is the branch that contains the current early access release code
+  early-access-branch: ea
+  # general-access-branch is the branch that contains the current general access release code
+  general-access-branch: ga
+  # staging-pipeline-id is the ADO ID of the pipeline that runs new builds
+  staging-pipeline-id: 123
+  # release-pipeline-id is the ADO ID of the pipeline that releases new versions
+  release-pipeline-id: 234
+  ## queue-time variable configured in the UI for debugging if needed
+  ## System.Debug is used throughout this pipeline for more Verbose output and logging
+  # System.Debug: false
+
+stages:
+  - stage: ConfirmInputVersions
+    jobs:
+      - job: ConfirmInputVersions
+        steps:
+          # assure the release version provided isn't just the default formatting suggestion
+          - ${{ if eq(parameters.releaseVersion, 'xx.x') }}:
+              - powershell: throw "No Release Version Provided. Please Provide A Release Version"
+                displayName: "Test Release Version Parameter"
+
+          # assure the next version provided isn't just the default formatting suggestion
+          - ${{ if eq(parameters.nextVersion, 'xx.x') }}:
+              - powershell: throw "No Next Version Provided. Please Provide A Next Version"
+                displayName: "Test Next Version Parameter"
+
+  - stage: MergeEAtoGA
+    jobs:
+      - job: MergeEAtoGA
+        steps:
+          # checkout while persisting fetch history and credentials for further git operations
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+          # STEP 1: merge early access to general access
+          - powershell: BuildScripts/Invoke-GitMerge.ps1 -DestinationBranchName $(general-access-branch) -SourceBranchName $(early-access-branch) -TriggerBranchName $(Build.SourceBranchName) -Verbose:$$(System.Debug)
+            displayName: "Merge EA to GA"
+
+  - stage: SetFriendlyNameforRelease
+    jobs:
+      - job: SetFriendlyNameforRelease
+        steps:
+          # checkout while persisting fetch history and credentials for further git operations
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+          # STEP 2: update friendly name in regular pipeline yaml file
+          - powershell: BuildScripts/Edit-dRelVersion.ps1 -VersionToSet ${{parameters.releaseVersion}} -TriggerBranchName $(Build.SourceBranchName) -Verbose:$$(System.Debug)
+            displayName: "Set FriendlyName for Release"
+
+  - stage: WaitForBuildAndTagRelease
+    jobs:
+      - job: WaitForBuildAndTagRelease
+        steps:
+          # checkout while persisting fetch history and credentials for further git operations
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+          # STEP 3: Wait for The Staging CI Build to Finish and then Tag the Release
+          - powershell: BuildScripts/Invoke-Pipeline.ps1 -PipelineID $(staging-pipeline-id) -AccessToken "$(Agent.Name):$(System.AccessToken)" -TriggerBranchName $(Build.SourceBranchName) -Verbose:$$(System.Debug)
+            displayName: "Wait For Build & Tag Release"
+
+  - stage: SetupEarlyAccessRelease
+    jobs:
+      - job: SetupEarlyAccessRelease
+        steps:
+          # checkout while persisting fetch history and credentials for further git operations
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+          # STEP 4: merge development to early access
+          - powershell: BuildScripts/Invoke-GitMerge.ps1 -DestinationBranchName $(early-access-branch) -SourceBranchName $(development-branch) -TriggerBranchName $(Build.SourceBranchName) -Verbose:$$(System.Debug)
+            displayName: "Merge Dev to EA"
+          # STEP 5: run the release pipeline
+          - powershell: BuildScripts/Invoke-Pipeline.ps1 -PipelineID $(release-pipeline-id) -AccessToken "$(Agent.Name):$(System.AccessToken)" -TriggerBranchName $(Build.SourceBranchName) -Release -Verbose:$$(System.Debug)
+            displayName: "Run Release Pipeline"
+
+  - stage: IncrementVersionforNextRelease
+    jobs:
+      - job: IncrementVersionforNextRelease
+        steps:
+          # checkout while persisting fetch history and credentials for further git operations
+          - checkout: self
+            persistCredentials: true
+            fetchDepth: 0
+          # STEP 6: update file version names in repo
+          - powershell: BuildScripts/Edit-RelVersion.ps1 -VersionToSet ${{parameters.nextVersion}} -OldVersion ${{parameters.releaseVersion}} -VersionIncrement -TriggerBranchName $(Build.SourceBranchName) -Verbose:$$(System.Debug)
+            displayName: "Increment Version for Next Release"
