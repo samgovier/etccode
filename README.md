@@ -4,6 +4,16 @@ This is a repository of various recent code that I have developed. This readme i
 
 (Note: some configuration values have been ommitted or replaced for privacy)
 
+## 2024
+
+### General/Edit-KeyVaultIPWhitelistADO.ps1
+
+This script uses well-known endpoints to intelligently pull the public IP of the script. It then uses this IP to whitelist the machine to an Azure Key Vault. It also can be used for removal.
+
+### General/Restart-AppPoolDelayed.ps1
+
+This script is a simple restart script, with functionality to expand the time between stop and start. This is useful for applications that may have dependencies that require time to refresh.
+
 ## 2023
 
 ### TerraformEnvironment
