@@ -6,6 +6,10 @@ This is a repository of various recent code that I have developed. This readme i
 
 ## 2024
 
+### General\vmcreate.bicep
+
+This bicep file is a simple poc for creating a VM. It contains some useful functionality like referencing existing resources, parameters, sub-resources and deployment scope.
+
 ### General/Edit-KeyVaultIPWhitelistADO.ps1
 
 This script uses well-known endpoints to intelligently pull the public IP of the script. It then uses this IP to whitelist the machine to an Azure Key Vault. It also can be used for removal.
